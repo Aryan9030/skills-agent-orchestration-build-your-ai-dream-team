@@ -1,0 +1,32 @@
+{
+  "projects": [
+    {
+      "name": "Community Portal",
+      "owner": "Maya Chen",
+      "status": "In progress",
+      "recentActivity": "Updated the member directory and accessibility checks.",
+      "priority": "High"
+    },
+    {
+      "name": "Data Explorer",
+      "owner": "Jordan Lee",
+      "status": "In review",
+      "recentActivity": "Submitted the first pass of the reporting dashboard.",
+      "priority": "Medium"
+    },
+    {
+      "name": "Design System Refresh",
+      "owner": "Sam Rivera",
+      "status": "Planning",
+      "recentActivity": "Collected component feedback from product teams.",
+      "priority": "Low"
+    },
+    {
+      "name": "Mobile Onboarding",
+      "owner": "Alex Morgan",
+      "status": "Blocked",
+      "recentActivity": "Waiting on the identity service test environment.",
+      "priority": "Critical"
+    }
+  ]
+}

@@ -1,0 +1,148 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="description" content="A quick view of project ownership, current status, recent activity, and priority.">
+    <title>Project Pulse</title>
+    <link rel="stylesheet" href="styles.css">
+  </head>
+  <body>
+    <main class="dashboard">
+      <header class="dashboard-header">
+        <h1>Project Pulse</h1>
+        <p class="dashboard-summary">A quick view of project ownership, current status, recent activity, and priority.</p>
+      </header>
+
+      <section aria-label="Projects">
+        <div id="dashboard-state" class="dashboard-state dashboard-state--loading" aria-live="polite">
+          Loading projects…
+        </div>
+        <ul id="project-list" class="project-list" aria-label="Project list"></ul>
+      </section>
+    </main>
+
+    <script>
+      const stateElement = document.querySelector("#dashboard-state");
+      const projectList = document.querySelector("#project-list");
+      const requiredFields = ["name", "owner", "status", "recentActivity", "priority"];
+      const stateClasses = {
+        loading: "dashboard-state--loading",
+        empty: "dashboard-state--empty",
+        error: "dashboard-state--error"
+      };
+
+      function showState(variant, message, role) {
+        stateElement.className = `dashboard-state ${stateClasses[variant]}`;
+        stateElement.replaceChildren();
+        if (role) {
+          stateElement.setAttribute("role", role);
+        } else {
+          stateElement.removeAttribute("role");
+        }
+
+        const messageElement = document.createElement("p");
+        messageElement.textContent = message;
+        stateElement.append(messageElement);
+
+        if (variant === "error") {
+          const retryButton = document.createElement("button");
+          retryButton.type = "button";
+          retryButton.textContent = "Try again";
+          retryButton.addEventListener("click", loadProjects);
+          stateElement.append(retryButton);
+        }
+      }
+
+      function validateProjects(data) {
+        if (!data || !Array.isArray(data.projects)) {
+          throw new Error("Project data must contain a projects array.");
+        }
+
+        data.projects.forEach((project, index) => {
+          if (!project || typeof project !== "object" || Array.isArray(project)) {
+            throw new Error(`Project ${index + 1} must be an object.`);
+          }
+
+          for (const field of requiredFields) {
+            if (typeof project[field] !== "string" || project[field].trim().length === 0) {
+              throw new Error(`Project ${index + 1} must have a non-empty ${field} string.`);
+            }
+          }
+        });
+
+        return data.projects;
+      }
+
+      function createField(className, label, value, badgeClass) {
+        const field = document.createElement("p");
+        field.className = className;
+
+        const labelElement = document.createElement("span");
+        labelElement.className = "field-label";
+        labelElement.textContent = `${label}: `;
+
+        const valueElement = document.createElement("span");
+        valueElement.textContent = value;
+        if (badgeClass) {
+          valueElement.className = badgeClass;
+        }
+
+        field.append(labelElement, valueElement);
+        return field;
+      }
+
+      function createProjectCard(project) {
+        const item = document.createElement("li");
+        item.className = "project-list__item";
+
+        const card = document.createElement("article");
+        card.className = "project-card";
+
+        const title = document.createElement("h2");
+        title.className = "project-card__title";
+        title.textContent = project.name;
+
+        card.append(
+          title,
+          createField("project-card__owner", "Owner", project.owner),
+          createField("project-card__status", "Status", project.status, "status-badge"),
+          createField("project-card__activity", "Recent activity", project.recentActivity),
+          createField("project-card__priority", "Priority", project.priority, "priority-badge")
+        );
+        item.append(card);
+        return item;
+      }
+
+      async function loadProjects() {
+        projectList.replaceChildren();
+        showState("loading", "Loading projects…");
+
+        try {
+          const response = await fetch("project-data.json", { cache: "no-store" });
+          if (!response.ok) {
+            throw new Error(`Project data request failed with status ${response.status}.`);
+          }
+
+          const data = await response.json();
+          const projects = validateProjects(data);
+          if (projects.length === 0) {
+            showState("empty", "No projects to display yet.");
+            return;
+          }
+
+          const cards = projects.map(createProjectCard);
+          projectList.replaceChildren(...cards);
+          stateElement.replaceChildren();
+          stateElement.className = "dashboard-state";
+          stateElement.removeAttribute("role");
+        } catch (error) {
+          console.error("Unable to load project data:", error);
+          showState("error", "Projects couldn’t be loaded. Please try again.", "alert");
+        }
+      }
+
+      loadProjects();
+    </script>
+  </body>
+</html>
